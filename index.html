@@ -3,83 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALAK SHARE - Free File Sharing Platform</title>
+    <title>Alak Share</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: #fff;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            backdrop-filter: blur(10px);
-        }
-        h1 {
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-        p {
-            color: #ddd;
-            font-size: 14px;
-            margin-bottom: 25px;
-        }
-        .upload-box {
-            border: 2px dashed rgba(255, 255, 255, 0.5);
-            padding: 25px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .upload-box:hover {
-            border-color: #fff;
-            background: rgba(255, 255, 255, 0.05);
-        }
-        input[type="file"] {
-            display: none;
-        }
-        .upload-btn {
-            background: #ff4b2b;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 15px;
-            width: 100%;
-            font-weight: bold;
-        }
-        .upload-btn:hover {
-            background: #ff416c;
-        }
+        body { font-family: Arial, sans-serif; background: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; }
+        button:hover { background: #4338ca; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>🚀 ALAK SHARE</h1>
-        <p>Share your large files securely with original quality retention.</p>
-        
-        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-            <p>📁 Tap here to select files</p>
-            <input type="file" id="fileInput">
+    <!-- লগইন / রেজিস্টার ফর্ম সেকশন -->
+    <div class="container" id="auth-section">
+        <h2>Alak Share</h2>
+        <p>Sign In / Register</p>
+        <input type="text" id="email" placeholder="Email or Username">
+        <input type="password" id="password" placeholder="Password">
+        <div id="message" style="margin: 10px 0; font-size: 14px;"></div>
+        <button onclick="registerEmail()">Register</button>
+        <button onclick="loginEmail()">Login</button>
+        <div style="margin-top: 15px;">
+            <a href="#" onclick="forgotPassword(); return false;">Forgot Password?</a>
         </div>
-
-        <button class="upload-btn">Upload & Generate Link</button>
     </div>
 
+    <!-- ড্যাশবোর্ড বা হোম পেজ (লগইন করার পর এটি দেখাবে) -->
+    <div class="container hidden" id="dashboard-section">
+        <h2>Welcome to Alak Share!</h2>
+        <p id="user-display" style="color: #4f46e5; font-weight: bold;"></p>
+        <p>You are successfully logged in.</p>
+        <button onclick="logoutUser()" style="background: #dc2626;">Logout</button>
+    </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBetwmdELGVPjA-gr2pumIB5DjzhMQemOk",
+    authDomain: "alak-share.firebaseapp.com",
+    projectId: "alak-share",
+    storageBucket: "alak-share.firebasestorage.app",
+    messagingSenderId: "263803430265",
+    appId: "1:263803430265:web:5ac3a58c889bdd7be17ba8",
+    measurementId: "G-W8XPJ5R59C"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // ব্যবহারকারী আগে থেকেই লগইন করা আছে কি না তা চেক করা
+  onAuthStateChanged(auth, (user) => {
+      if (user) {
+          document.getElementById('auth-section').classList.add('hidden');
+          document.getElementById('dashboard-section').classList.remove('hidden');
+          document.getElementById('user-display').innerText = user.email;
+      } else {
+          document.getElementById('auth-section').classList.remove('hidden');
+          document.getElementById('dashboard-section').classList.add('hidden');
+      }
+  });
+
+  window.registerEmail = function() {
+      const inputVal = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      
+      if(!inputVal || !password) {
+          document.getElementById('message').style.color = "#f43f5e";
+          document.getElementById('message').innerText = "Please fill in all fields.";
+          return;
+      }
+
+      let finalEmail = inputVal;
+      if(!inputVal.includes('@')) {
+          finalEmail = inputVal + "@alakshare.com";
+      }
+      
+      createUserWithEmailAndPassword(auth, finalEmail, password)
+          .then((userCredential) => {
+              document.getElementById('message').style.color = "#10b981";
+              document.getElementById('message').innerText = "Registration Successful!";
+          })
+          .catch((error) => {
+              document.getElementById('message').style.color = "#f43f5e";
+              document.getElementById('message').innerText = "Error: " + error.message;
+          });
+  };
+
+  window.loginEmail = function() {
+      const inputVal = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      
+      if(!inputVal || !password) {
+          document.getElementById('message').style.color = "#f43f5e";
+          document.getElementById('message').innerText = "Please fill in all fields.";
+          return;
+      }
+
+      let finalEmail = inputVal;
+      if(!inputVal.includes('@')) {
+          finalEmail = inputVal + "@alakshare.com";
+      }
+      
+      signInWithEmailAndPassword(auth, finalEmail, password)
+          .then((userCredential) => {
+              document.getElementById('message').style.color = "#10b981";
+              document.getElementById('message').innerText = "Login Successful!";
+          })
+          .catch((error) => {
+              document.getElementById('message').style.color = "#f43f5e";
+              document.getElementById('message').innerText = "Error: " + error.message;
+          });
+  };
+
+  window.forgotPassword = function() {
+      const inputVal = document.getElementById('email').value.trim();
+      if (!inputVal) {
+          document.getElementById('message').style.color = "#f43f5e";
+          document.getElementById('message').innerText = "Please enter your Email or Username for reset!";
+          return;
+      }
+
+      let finalEmail = inputVal;
+      if(!inputVal.includes('@')) {
+          finalEmail = inputVal + "@alakshare.com";
+      }
+
+      sendPasswordResetEmail(auth, finalEmail)
+          .then(() => {
+              document.getElementById('message').style.color = "#10b981";
+              document.getElementById('message').innerText = "Password reset link sent to your email!";
+          })
+          .catch((error) => {
+              document.getElementById('message').style.color = "#f43f5e";
+              document.getElementById('message').innerText = "Error: " + error.message;
+          });
+  };
+
+  window.logoutUser = function() {
+      signOut(auth).then(() => {
+          document.getElementById('email').value = '';
+          document.getElementById('password').value = '';
+          document.getElementById('message').innerText = '';
+      }).catch((error) => {
+          console.error("Logout Error: ", error);
+      });
+  };
+</script>
 </body>
 </html>
-
